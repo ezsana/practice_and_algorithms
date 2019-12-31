@@ -20,12 +20,12 @@ CREATE OR REPLACE FUNCTION check_pair(id1 int, id2 int) RETURNS boolean AS $$
     END;$$
     LANGUAGE plpgsql;
 
-CREATE TABLE friends_nodes (
+CREATE TEMPORARY TABLE friends_nodes (
     id int PRIMARY KEY,
     name varchar(255)
 );
 
-CREATE TABLE friends_edges (
+CREATE TEMPORARY TABLE friends_edges (
     edge_point_1 int NOT NULL REFERENCES friends_nodes(id) ON UPDATE CASCADE ON DELETE CASCADE,
     edge_point_2 int NOT NULL REFERENCES friends_nodes(id) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (edge_point_1, edge_point_2),
