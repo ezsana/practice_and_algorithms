@@ -7,6 +7,47 @@
  Confirmed friends = approved edges here.
  */
 
+CREATE OR REPLACE FUNCTION check_pair(id1 int, id2 int) RETURNS boolean AS $$
+    DECLARE
+        sum_of_hits int DEFAULT 0;
+    BEGIN
+        SELECT count(*) INTO sum_of_hits FROM (
+            SELECT * FROM friends_edges WHERE edge_point_1 = id1 AND edge_point_2 = id2
+            UNION ALL
+            SELECT * FROM friends_edges WHERE edge_point_1 = id2 AND edge_point_2 = id1
+            ) AS pairs;
+        RETURN sum_of_hits = 0;
+    END;$$
+    LANGUAGE plpgsql;
+
+CREATE TABLE friends_nodes (
+    id int PRIMARY KEY,
+    name varchar(255)
+);
+
+CREATE TABLE friends_edges (
+    edge_point_1 int NOT NULL REFERENCES friends_nodes(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    edge_point_2 int NOT NULL REFERENCES friends_nodes(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (edge_point_1, edge_point_2),
+    CHECK ( check_pair(edge_point_1, edge_point_2) )
+);
+
+CREATE INDEX ep1_index ON friends_edges(edge_point_1);
+CREATE INDEX ep2_index ON friends_edges(edge_point_2);
+
+
+CREATE OR REPLACE PROCEDURE insert_values_to_friends_nodes()
+LANGUAGE plpgsql
+AS $$
+    DECLARE
+        names varchar(255) := '{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven",' ||
+                                  '"twelve", "thirteen", "fourteen", "fifteen"}';
+    BEGIN
+        for i in 1..15 loop
+            INSERT INTO friends_nodes VALUES (i, names[i]);
+        end loop;
+    end;$$;
+
 /*
  Adjacency list of the graph:
  1 -> 2 - 4 - 6 - 10;
@@ -25,4 +66,22 @@
  14 -> 12 - 13;
  15 -> 9;
  */
+
+CREATE OR REPLACE PROCEDURE insert_values_to_friends_edges()
+LANGUAGE plpgsql
+AS $$
+    DECLARE
+        edge_node_pairs int[][] := '{{1,2}, {1,4}, {1,6}, {1,10}, {2,8}, {2,11}, {3,7}, {3,10}, {5,6}, {6,8},' ||
+                                   ' {8,9}, {9,11}, {9,15}, {10,11}, {12,13}, {12,14}, {13,14}}';
+        node_pairs int[];
+    BEGIN
+        foreach node_pairs slice 1 in ARRAY edge_node_pairs
+        loop
+            INSERT INTO friends_edges VALUES (node_pairs[1], node_pairs[2]);
+        end loop;
+    END;$$;
+
+CALL insert_values_to_friends_nodes();
+CALL insert_values_to_friends_edges();
+
 
