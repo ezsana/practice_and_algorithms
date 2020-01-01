@@ -23,7 +23,6 @@ CREATE OR REPLACE FUNCTION nth_prime(n int) RETURNS int AS $$
             for j in 2..|/nth_prime_number loop
                 if nth_prime_number % j = 0 then
                     counter := counter + 1;
-                    RAISE notice 'counter is %', counter;
                     EXIT;
                 end if;
             end loop;
