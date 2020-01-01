@@ -35,7 +35,7 @@ CREATE TEMPORARY TABLE friends_edges (
 CREATE INDEX ep1_index ON friends_edges(edge_point_1);
 CREATE INDEX ep2_index ON friends_edges(edge_point_2);
 
-
+-- For some reason this is not working because of syntax error - but I couldn't find out why.
 CREATE OR REPLACE PROCEDURE insert_values_to_friends_nodes()
 LANGUAGE plpgsql
 AS $$
@@ -67,6 +67,7 @@ AS $$
  15 -> 9;
  */
 
+-- This is not working either, same problem as above.
 CREATE OR REPLACE PROCEDURE insert_values_to_friends_edges()
 LANGUAGE plpgsql
 AS $$
@@ -84,4 +85,55 @@ AS $$
 CALL insert_values_to_friends_nodes();
 CALL insert_values_to_friends_edges();
 
+/* I've used these instead of above procedures:
+ INSERT INTO friends_nodes VALUES (1, 'one');
+INSERT INTO friends_nodes VALUES (2, 'two');
+INSERT INTO friends_nodes VALUES (3, 'three');
+INSERT INTO friends_nodes VALUES (4, 'four');
+INSERT INTO friends_nodes VALUES (5, 'five');
+INSERT INTO friends_nodes VALUES (6, 'six');
+INSERT INTO friends_nodes VALUES (7, 'seven');
+INSERT INTO friends_nodes VALUES (8, 'eight');
+INSERT INTO friends_nodes VALUES (9, 'nine');
+INSERT INTO friends_nodes VALUES (10, 'ten');
+INSERT INTO friends_nodes VALUES (11, 'eleven');
+INSERT INTO friends_nodes VALUES (12, 'twelve');
+INSERT INTO friends_nodes VALUES (13, 'thirteen');
+INSERT INTO friends_nodes VALUES (14, 'fourteen');
+INSERT INTO friends_nodes VALUES (15, 'fifteen');
 
+INSERT INTO friends_edges VALUES (1,2);
+INSERT INTO friends_edges VALUES (1,4);
+INSERT INTO friends_edges VALUES (1,6);
+INSERT INTO friends_edges VALUES (1,10);
+INSERT INTO friends_edges VALUES (2,8);
+INSERT INTO friends_edges VALUES (2,11);
+INSERT INTO friends_edges VALUES (3,7);
+INSERT INTO friends_edges VALUES (3,10);
+INSERT INTO friends_edges VALUES (5,6);
+INSERT INTO friends_edges VALUES (6,8);
+INSERT INTO friends_edges VALUES (8,9);
+INSERT INTO friends_edges VALUES (9,11);
+INSERT INTO friends_edges VALUES (9,15);
+INSERT INTO friends_edges VALUES (10,11);
+INSERT INTO friends_edges VALUES (12,13);
+INSERT INTO friends_edges VALUES (12,14);
+INSERT INTO friends_edges VALUES (13,14);
+ */
+
+-- Function to find out the connections:
+
+CREATE OR REPLACE FUNCTION get_connections(searched_id int) RETURNS table(vertice int) AS $$
+DECLARE
+    ids record;
+BEGIN
+    for ids in
+        SELECT * FROM friends_edges WHERE edge_point_2 = searched_id OR edge_point_1 = searched_id loop
+        if ids.edge_point_2 = searched_id then
+            SELECT ids.edge_point_1, ids.edge_point_2 into ids.edge_point_2, ids.edge_point_1;
+        end if;
+        vertice := ids.edge_point_2;
+        RETURN next;
+    end loop;
+end;$$
+LANGUAGE plpgsql;
